@@ -1,76 +1,64 @@
 @echo off
-REM Pilah.in Infrastructure Startup Script
-REM Windows batch file for starting local development environment
+REM ============================================================
+REM Pilah.in Infrastructure Startup Script (Windows)
+REM Menjalankan PostgreSQL, Redis, dan ML service via Docker.
+REM ============================================================
 
 echo ========================================
 echo Pilah.in Infrastructure Startup
 echo ========================================
 echo.
 
-REM Check Docker installed
+REM Cek Docker terinstall
 where docker >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Docker not installed
-    echo Please install Docker Desktop from https://www.docker.com/products/docker-desktop
+    echo ERROR: Docker tidak terinstall.
+    echo Install Docker Desktop dari https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
 
-REM Check Docker running
+REM Cek Docker berjalan
 docker info >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Docker not running
-    echo Please start Docker Desktop and try again
+    echo ERROR: Docker belum berjalan.
+    echo Buka Docker Desktop lalu coba lagi.
     pause
     exit /b 1
 )
 
-echo [1/4] Checking environment configuration...
+echo [1/3] Menyiapkan file .env...
 if not exist .env (
-    echo Creating .env from template...
-    copy .env.example .env
-    echo.
-    echo IMPORTANT: Edit .env file with your local configuration
-    echo Press any key to continue after editing .env
-    pause
+    echo Membuat .env dari .env.example...
+    copy .env.example .env >nul
+    echo SELESAI. .env dibuat dengan nilai default dev.
 )
 
-echo [2/4] Starting infrastructure services...
+echo.
+echo [2/3] Menjalankan infrastruktur (Postgres, Redis, ML service)...
 cd FASE_0_Infrastructure
-docker-compose up -d
+docker compose up -d
 
 echo.
-echo [3/4] Waiting for services to be healthy...
+echo [3/3] Menunggu service sehat...
 timeout /t 10 /nobreak >nul
-
-echo.
-echo [4/4] Checking service status...
-docker-compose ps
+docker compose ps
 
 echo.
 echo ========================================
-echo Infrastructure Started Successfully!
+echo Infrastruktur Berjalan!
 echo ========================================
 echo.
 echo Services:
-echo   PostgreSQL: localhost:5432
-echo   Redis: localhost:6379
-echo   MinIO API: localhost:9000
-echo   MinIO Console: http://localhost:9001
+echo   PostgreSQL : localhost:5432  (db: pilah_in, user: postgres)
+echo   Redis      : localhost:6379
+echo   ML Service : http://localhost:8001/health
 echo.
-echo Next steps:
-echo   1. Access MinIO Console: http://localhost:9001
-echo      Username: pilah_admin
-echo      Password: pilah_minio_password_dev
+echo Langkah selanjutnya:
+echo   1. Backend  : python manage.py migrate ^&^& python manage.py runserver 0.0.0.0:8000
+echo   2. Buat admin: make seed-admin  (atau lihat README)
+echo   3. Frontend : cd FASE_3_Frontend\pilah-frontend ^&^& npm install ^&^& npm run dev
 echo.
-echo   2. Connect to PostgreSQL:
-echo      Host: localhost:5432
-echo      Database: pilah_in
-echo      User: postgres
-echo.
-echo   3. Test Redis:
-echo      docker exec -it pilah_redis redis-cli ping
-echo.
-echo To stop services: docker-compose down
+echo Untuk stop: docker compose -f FASE_0_Infrastructure\docker-compose.yml down
 echo.
 pause

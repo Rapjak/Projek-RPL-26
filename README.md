@@ -46,50 +46,84 @@ Projek-RPL-26/
 ## Setup Cepat (Development)
 
 ### Prasyarat
-- Python 3.13+, Node.js 24+, Docker Desktop
-- PostgreSQL 16 & Redis 7 (lewat Docker)
+- **Docker Desktop** (untuk PostgreSQL, Redis, ML service) — wajib
+- **Python 3.13+** dengan `pip`
+- **Node.js 24+** dengan `npm`
 
-### 1. Infrastruktur (PostgreSQL + Redis + ML Service)
+### Langkah 1 — Clone & Start Infrastruktur (Postgres + Redis + ML)
+
 ```bash
-cd FASE_0_Infrastructure
-docker compose up -d          # postgres, redis, ml_service
+git clone https://github.com/Rapjak/Projek-RPL-26.git
+cd Projek-RPL-26
+
+# Windows:
+start-infrastructure.bat
+# Atau manual:
+docker compose -f FASE_0_Infrastructure/docker-compose.yml up -d
 ```
 
-### 2. Backend (Django)
+Ini menjalankan 3 container: `pilah_postgres` (DB), `pilah_redis` (cache), `pilah_ml_service` (FastAPI pada port 8001).
+
+### Langkah 2 — Backend (Django, port 8000)
+
 ```bash
-python -m venv .venv && .venv\Scripts\activate
+# Buat virtualenv & install dependencies
+python -m venv .venv
+.venv\Scripts\activate          # Windows  | source .venv/bin/activate (Linux/Mac)
 pip install -r requirements.txt
 
-# Copy env template & sesuaikan
-copy .env.example .env         # Windows
-#   Lalu edit SECRET_KEY, DATABASE_PASSWORD, REDIS_PASSWORD
+# Buat file .env dari template (tidak perlu diedit untuk dev)
+copy .env.example .env          # Windows  | cp .env.example .env
 
+# Buat skema database via Django migrations
 python manage.py migrate
 
-# Buat admin GoGreen account (akun demo)
-python manage.py shell -c "from apps.users.models import User; User.objects.create_admin(npm_nip='ADM-001', name='Admin GoGreen', email='admin.gogreen@unpad.ac.id', unit_gedung='Pimpinan', password='AdminPass123!')"
+# Buat akun admin GoGreen + materi edukasi + reward contoh
+python manage.py seed_demo
 
+# Jalankan backend
 python manage.py runserver 0.0.0.0:8000
 ```
 
-### 3. Frontend (React + Vite)
+Backend siap di `http://localhost:8000/api/v1/`.
+
+### Langkah 3 — Frontend (React + Vite, port 3000)
+
 ```bash
 cd FASE_3_Frontend/pilah-frontend
 npm install
 
-# Copy env template
-copy .env.example .env         # Windows
-#   Default: VITE_API_URL=http://localhost:8000/api/v1
+# Buat file .env dari template
+copy .env.example .env          # Windows  | cp .env.example .env
 
-npm run dev                    # http://localhost:3000
+npm run dev                     # http://localhost:3000
+```
+
+### Langkah 4 — Buka aplikasi
+
+Buka browser ke **http://localhost:3000**, login dengan akun admin di atas, atau register akun civitas baru.
+
+### Alternatif: pakai Makefile
+
+Kalau punya `make` (Git Bash / WSL / Linux):
+```bash
+make up            # start Docker services
+make backend       # install + migrate + runserver
+make seed-admin    # buat akun admin demo
+make frontend      # install + npm run dev
+make test          # run Django test suite
+make down          # stop Docker services
 ```
 
 ## Akun Demo
 
+Setelah menjalankan `make seed-admin` (atau perintah shell di Langkah 2), akun admin tersedia:
+
 | Peran | Login | Password |
 |---|---|---|
 | Admin GoGreen | `admin.gogreen@unpad.ac.id` | `AdminPass123!` |
-| Civitas | `smoke099@mail.unpad.ac.id` *atau* `140810240099` | `StrongPass123!` |
+
+Akun **civitas** tidak di-seed otomatis — daftarkan sendiri lewat halaman **Register** di `http://localhost:3000/register`, lalu login. (Saat register, peran otomatis = civitas.)
 
 ## Port Bindings
 

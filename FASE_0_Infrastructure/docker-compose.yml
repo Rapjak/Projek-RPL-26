@@ -13,7 +13,10 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./01_PostgreSQL_Schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      # NOTE: 01_PostgreSQL_Schema.sql TIDAK di-mount sebagai init script karena
+      # Django migrations yang akan membuat & mengelola seluruh tabel (agar
+      # tidak konflik "table already exists" saat `python manage.py migrate`).
+      # File schema SQL tetap disertakan sebagai referensi dokumentasi.
     networks:
       - pilah_network
     healthcheck:

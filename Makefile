@@ -1,106 +1,91 @@
-# Makefile for Pilah.in Local Development
+# Pilah.in — Local Development Makefile
 # Usage: make [target]
+# Requires: Docker Desktop, Python 3.13+, Node.js 24+
 
-.PHONY: help up down logs ps shell-django shell-postgres shell-redis test clean
+.PHONY: help up down ps logs backend frontend migrate seed-admin test e2e clean
 
 help:
 	@echo "Pilah.in Local Development Commands"
 	@echo "===================================="
 	@echo ""
 	@echo "Infrastructure:"
-	@echo "  make up              - Start all services (postgres, redis, minio)"
-	@echo "  make down            - Stop all services"
-	@echo "  make ps              - Show running containers"
-	@echo "  make logs            - View logs (all services)"
-	@echo "  make clean           - Remove volumes and stop services"
-	@echo ""
-	@echo "Database:"
-	@echo "  make shell-postgres  - Connect to PostgreSQL shell"
-	@echo "  make db-migrate      - Run Django migrations"
-	@echo "  make db-backup       - Backup PostgreSQL database"
-	@echo ""
-	@echo "Cache:"
-	@echo "  make shell-redis     - Connect to Redis shell"
-	@echo "  make redis-flush     - Clear Redis cache (dev only)"
-	@echo ""
-	@echo "Storage:"
-	@echo "  make minio-console   - Open MinIO console in browser"
-	@echo "  make minio-test      - Test MinIO bucket access"
+	@echo "  make up            - Start Postgres + Redis + ML service (Docker)"
+	@echo "  make down          - Stop all Docker services"
+	@echo "  make ps            - Show running containers"
+	@echo "  make logs          - Tail Docker logs"
 	@echo ""
 	@echo "Backend:"
-	@echo "  make shell-django    - Connect to Django shell"
-	@echo "  make run-django      - Run Django development server"
-	@echo "  make test            - Run tests"
+	@echo "  make backend       - Install deps + migrate + run Django (port 8000)"
+	@echo "  make migrate       - Run Django migrations"
+	@echo "  make seed-admin    - Create admin GoGreen demo account"
+	@echo "  make test          - Run Django test suite (TC-001..TC-053)"
 	@echo ""
+	@echo "Frontend:"
+	@echo "  make frontend      - Install deps + run Vite dev (port 3000)"
+	@echo ""
+	@echo "Cleanup:"
+	@echo "  make clean         - Stop containers + delete volumes (DATA LOST)"
 
-# Infrastructure Commands
+# ------------------------------------------------------------------
+# Infrastructure (Docker: Postgres, Redis, ML service)
+# ------------------------------------------------------------------
 up:
 	@echo "Starting Pilah.in infrastructure..."
-	docker-compose -f FASE_0_Infrastructure/docker-compose.yml up -d
+	docker compose -f FASE_0_Infrastructure/docker-compose.yml up -d
 	@echo "Waiting for services to be healthy..."
 	@sleep 5
-	@docker-compose -f FASE_0_Infrastructure/docker-compose.yml ps
+	docker compose -f FASE_0_Infrastructure/docker-compose.yml ps
 
 down:
-	@echo "Stopping all services..."
-	docker-compose -f FASE_0_Infrastructure/docker-compose.yml down
+	docker compose -f FASE_0_Infrastructure/docker-compose.yml down
 
 ps:
-	docker-compose -f FASE_0_Infrastructure/docker-compose.yml ps
+	docker compose -f FASE_0_Infrastructure/docker-compose.yml ps
 
 logs:
-	docker-compose -f FASE_0_Infrastructure/docker-compose.yml logs -f
+	docker compose -f FASE_0_Infrastructure/docker-compose.yml logs -f
 
-# Database Commands
-shell-postgres:
-	docker exec -it pilah_postgres psql -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-pilah_in}
-
-db-migrate:
-	docker exec pilah_postgres psql -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-pilah_in} -f /docker-entrypoint-initdb.d/01_schema.sql
-
-db-backup:
-	@echo "Backing up PostgreSQL database..."
-	docker exec pilah_postgres pg_dump -U ${DATABASE_USER:-postgres} ${DATABASE_NAME:-pilah_in} > backup_$(shell date +%Y%m%d_%H%M%S).sql
-	@echo "Backup completed: backup_$(shell date +%Y%m%d_%H%M%S).sql"
-
-# Redis Commands
-shell-redis:
-	docker exec -it pilah_redis redis-cli
-
-redis-flush:
-	@echo "WARNING: Clearing all Redis cache (development only)"
-	docker exec pilah_redis redis-cli FLUSHALL
-
-# MinIO Commands
-minio-console:
-	@echo "Opening MinIO Console at http://localhost:9001"
-	@echo "Username: ${MINIO_ROOT_USER:-pilah_admin}"
-	@echo "Password: ${MINIO_ROOT_PASSWORD:-pilah_minio_password_dev}"
-	open http://localhost:9001 || xdg-open http://localhost:9001 || start http://localhost:9001
-
-minio-test:
-	@echo "Testing MinIO connection..."
-	docker exec pilah_minio mc ls pilah
-
-# Status Check
-status:
-	@echo "=== Pilah.in Infrastructure Status ==="
+# ------------------------------------------------------------------
+# Backend (Django)
+# ------------------------------------------------------------------
+backend:
+	@echo "Setting up backend..."
+	pip install -r requirements.txt
+	cp -n .env.example .env 2>/dev/null || true
+	python manage.py migrate
 	@echo ""
-	@echo "PostgreSQL:"
-	@docker exec pilah_postgres pg_isready -U ${DATABASE_USER:-postgres} || echo "NOT RUNNING"
-	@echo ""
-	@echo "Redis:"
-	@docker exec pilah_redis redis-cli ping || echo "NOT RUNNING"
-	@echo ""
-	@echo "MinIO:"
-	@docker exec pilah_minio curl -s http://localhost:9000/minio/health/live > /dev/null && echo "RUNNING" || echo "NOT RUNNING"
+	@echo "Backend ready on http://localhost:8000"
+	python manage.py runserver 0.0.0.0:8000
 
+migrate:
+	python manage.py migrate
+
+seed-admin:
+	python manage.py seed_demo
+	@echo "Seed selesai. Admin: admin.gogreen@unpad.ac.id / AdminPass123!"
+
+test:
+	python manage.py test tests.test_tc_001_012_auth tests.test_tc_013_030_upload tests.test_tc_031_041_classification tests.test_tc_042_053_points --settings=config.settings_test --noinput
+
+# ------------------------------------------------------------------
+# Frontend (React + Vite)
+# ------------------------------------------------------------------
+frontend:
+	@echo "Setting up frontend..."
+	cd FASE_3_Frontend/pilah-frontend && npm install
+	cd FASE_3_Frontend/pilah-frontend && cp -n .env.example .env 2>/dev/null || true
+	@echo ""
+	@echo "Frontend ready on http://localhost:3000"
+	cd FASE_3_Frontend/pilah-frontend && npm run dev
+
+# ------------------------------------------------------------------
 # Cleanup
+# ------------------------------------------------------------------
 clean:
-	@echo "WARNING: This will delete all volumes and data"
+	@echo "WARNING: This will delete all Docker volumes (data lost)."
 	@read -p "Continue? (y/N) " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose -f FASE_0_Infrastructure/docker-compose.yml down -v; \
+		docker compose -f FASE_0_Infrastructure/docker-compose.yml down -v; \
 		echo "Cleanup completed"; \
 	fi
