@@ -165,11 +165,14 @@ CACHES = {
 # Static files configuration
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+# Only include static/ in STATICFILES_DIRS if it exists (absent in a fresh clone)
+_static_dir = BASE_DIR / 'static'
+STATICFILES_DIRS = [_static_dir] if _static_dir.is_dir() else []
 
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = [
@@ -234,6 +237,10 @@ ML_SERVICE_URL = os.getenv('ML_SERVICE_URL', 'http://localhost:8001')
 # Cache Configuration
 CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', '300'))
 ENABLE_CACHE = os.getenv('ENABLE_CACHE', 'True').lower() == 'true'
+
+# Ensure logs/ directory exists (it's gitignored, so absent in a fresh clone)
+LOG_DIR = BASE_DIR / 'logs'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Logging Configuration
 LOGGING = {
