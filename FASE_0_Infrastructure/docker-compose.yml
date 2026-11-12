@@ -1,0 +1,107 @@
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:14-alpine
+    container_name: pilah_postgres
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME:-pilah_in}
+      - POSTGRES_USER=${DATABASE_USER:-postgres}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-pilah_postgres_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./01_PostgreSQL_Schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+    networks:
+      - pilah_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-pilah_in}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Redis Cache
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: pilah_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    command: redis-server /usr/local/etc/redis/redis.conf
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-pilah_redis_password_dev}
+    networks:
+      - pilah_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # FastAPI ML Classification Service
+  # ============================================
+  ml-service:
+    build:
+      context: ../ml_service
+      dockerfile: Dockerfile
+    container_name: pilah_ml_service
+    ports:
+      - "8001:8001"
+    networks:
+      - pilah_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # ============================================
+  # MinIO Object Storage (DISABLED - Docker Hub access issue)
+  # ============================================
+  # Uncomment when MinIO images accessible
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: pilah_minio
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   volumes:
+  #     - minio_data:/data
+  #   environment:
+  #     - MINIO_ROOT_USER=${MINIO_ROOT_USER:-pilah_admin}
+  #     - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-pilah_minio_password_dev}
+  #   command: server /data --console-address ":9001"
+  #   networks:
+  #     - pilah_network
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  pilah_network:
+    driver: bridge

@@ -1,0 +1,82 @@
+# ============================================================
+# .gitignore untuk Pilah.in — seluruh repo root
+# ============================================================
+
+# ---- Secrets / Environment ----
+# .env berisi SECRET_KEY, password DB/Redis/MinIO/AWS/SMTP — JANGAN commit
+.env
+.env.local
+.env.*.local
+FASE_0_Infrastructure/.env.minio
+FASE_0_Infrastructure/.env.redis
+FASE_3_Frontend/pilah-frontend/.env
+FASE_3_Frontend/pilah-frontend/.env.local
+# Kecuali template .env.example (aman, untuk developer baru)
+!.env.example
+!FASE_3_Frontend/pilah-frontend/.env.example
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.eggs/
+
+# ---- Node.js / Frontend ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.local
+
+# ---- Build artifacts & test output ----
+FASE_3_Frontend/pilah-frontend/dist/
+FASE_3_Frontend/pilah-frontend/test-results/
+FASE_3_Frontend/pilah-frontend/playwright-report/
+FASE_3_Frontend/pilah-frontend/blob-report/
+FASE_3_Frontend/pilah-frontend/dbg-out/
+FASE_3_Frontend/pilah-frontend/playwright/.cache/
+
+# ---- Runtime data (logs & uploads) ----
+logs/
+*.log
+backend_out.log
+backend_err.log
+backend_*.log
+FASE_3_Frontend/pilah-frontend/frontend_out.log
+FASE_3_Frontend/pilah-frontend/frontend_err.log
+media/
+staticfiles/
+static/collectstatic/
+
+# ---- Database dumps & backups ----
+*.sql.gz
+*.dump
+*.backup
+
+# ---- OS / Editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# ---- Misc temp ----
+untracked_list.txt
+debug_*_result.json
+*.lock

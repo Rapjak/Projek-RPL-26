@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>3.2 Implementasi Database - Simplified</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">3.2 Implementasi Database - Simplified</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#implementasi-database" id="toc-implementasi-database">3.2
+Implementasi Database</a>
+<ul>
+<li><a href="#pendahuluan" id="toc-pendahuluan">Pendahuluan</a></li>
+<li><a href="#task-1-postgresql-schema-creation"
+id="toc-task-1-postgresql-schema-creation">Task 1: PostgreSQL Schema
+Creation</a></li>
+<li><a href="#detail-tabel-dan-kolom"
+id="toc-detail-tabel-dan-kolom">1.4 Detail Tabel dan Kolom</a></li>
+<li><a href="#views-materialized-queries"
+id="toc-views-materialized-queries">1.5 Views (Materialized
+Queries)</a></li>
+<li><a href="#triggers-automated-data-integrity"
+id="toc-triggers-automated-data-integrity">1.6 Triggers (Automated Data
+Integrity)</a></li>
+<li><a href="#design-decisions-dan-justification"
+id="toc-design-decisions-dan-justification">1.7 Design Decisions dan
+Justification</a></li>
+<li><a href="#sample-data" id="toc-sample-data">1.8 Sample Data</a></li>
+<li><a href="#execution-dan-verification"
+id="toc-execution-dan-verification">1.9 Execution dan
+Verification</a></li>
+<li><a href="#key-implementation-notes"
+id="toc-key-implementation-notes">1.10 Key Implementation Notes</a></li>
+<li><a href="#summary" id="toc-summary">Summary</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="implementasi-database">3.2 Implementasi Database</h1>
+<h2 id="pendahuluan">Pendahuluan</h2>
+<p>Bab ini mendokumentasikan implementasi layer database Pilah.in,
+mencakup physical schema PostgreSQL, desain tabel 3NF, constraints,
+indexes, views, dan triggers. Seluruh implementasi mengacu pada Data
+Dictionary dalam dokumen teknis RPL dan telah melalui verifikasi
+kecocokan 100%.</p>
+<h3 id="teknologi-database">Teknologi Database</h3>
+<p>DBMS: PostgreSQL 14+</p>
+<p>Data Types: UUID (native), TIMESTAMPTZ (timezone-aware), NUMERIC
+(precision)</p>
+<p>Extensions: uuid-ossp, pgcrypto</p>
+<p>Normalization: 3NF (Third Normal Form)</p>
+<p>Encoding: UTF-8 (mendukung Indonesian characters)</p>
+<h2 id="task-1-postgresql-schema-creation">Task 1: PostgreSQL Schema
+Creation</h2>
+<h3 id="overview">1.1 Overview</h3>
+<p>Task ini mengimplementasikan database schema Pilah.in yang terdiri
+dari:</p>
+<ul>
+<li>7 tabel utama untuk menyimpan data pengguna, unggahan foto, hasil
+klasifikasi, reward, transaksi poin, dan materi edukasi</li>
+<li>4 views untuk leaderboard dan statistik</li>
+<li>2 triggers untuk auto-update timestamp</li>
+<li>Kontrol integritas data melalui constraints, foreign keys, dan check
+conditions</li>
+</ul>
+<h3 id="file-implementasi">1.2 File Implementasi</h3>
+<p>File: FASE_0_Infrastructure/01_PostgreSQL_Schema.sql (Schema
+definition + sample data)</p>
+<p>File: FASE_0_Infrastructure/03_2_Implementasi_Database.md
+(Dokumentasi teknis)</p>
+<h3 id="physical-schema-diagram">1.3 Physical Schema Diagram</h3>
+<p>Referensi diagram relasional tersedia di: Relational-Database-3NF.png
+- ERD diagram dengan kardinalitas dan foreign key relationships</p>
+<p>Ringkasan Relasi:</p>
+<ul>
+<li>users → uploads (1:N via id_pengguna)</li>
+<li>uploads → classification_results (1:1 via id_unggahan)</li>
+<li>users → reward_redemptions (1:N via id_pengguna)</li>
+<li>reward_redemptions → rewards (N:1 via id_reward)</li>
+<li>users → point_transactions (1:N via id_pengguna)</li>
+<li>users → education_materials (1:N via id_admin, nullable)</li>
+</ul>
+<h2 id="detail-tabel-dan-kolom">1.4 Detail Tabel dan Kolom</h2>
+<h3 id="tabel-1-users">Tabel 1: users</h3>
+<p>Fungsi: Menyimpan data identitas civitas akademika, kredensial
+autentikasi, hak akses peran, dan akumulasi total saldo poin aktif.</p>
+<p>Realisasi Requirement: DATA-001</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_pengguna: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik pengenal akun pengguna</li>
+<li>npm_nip: VARCHAR(20), UNIQUE, NOT NULL - Nomor Induk Mahasiswa atau
+NIP civitas Unpad</li>
+<li>nama: VARCHAR(100), NOT NULL - Nama lengkap pengguna</li>
+<li>email: VARCHAR(100), UNIQUE, NOT NULL - Alamat email resmi
+pengguna</li>
+<li>password_hash: VARCHAR(255), NOT NULL - Hash kata sandi terenkripsi
+(PBKDF2/Argon2)</li>
+<li>peran: VARCHAR(20), NOT NULL, CHECK (peran IN (‘civitas’,
+‘admin_gogreen’, ‘pimpinan’)) - Tingkat hak akses otorisasi sistem</li>
+<li>unit_gedung: VARCHAR(50), NOT NULL - Asal fakultas, departemen, atau
+lokasi gedung</li>
+<li>total_poin: INTEGER, NOT NULL, DEFAULT 0, CHECK (total_poin &gt;= 0)
+- Akumulasi saldo poin aktif pengguna</li>
+<li>created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+akun didaftarkan</li>
+<li>updated_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+profil terakhir kali diperbarui</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_users_npm_nip (UNIQUE) - cepat lookup via npm/nip</li>
+<li>idx_users_email (UNIQUE) - cepat lookup via email</li>
+<li>idx_users_peran - filter user berdasarkan role</li>
+<li>idx_users_total_poin (DESC) - leaderboard ranking</li>
+</ul>
+<h3 id="tabel-2-uploads">Tabel 2: uploads</h3>
+<p>Fungsi: Menyimpan rekam jejak berkas foto bukti pemilahan sampah yang
+dikirim oleh civitas akademika.</p>
+<p>Realisasi Requirement: DATA-002</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_unggahan: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik data sesi unggahan</li>
+<li>id_pengguna: UUID, FOREIGN KEY REFERENCES users(id_pengguna), NOT
+NULL - ID pengguna yang mengunggah foto</li>
+<li>url_foto: VARCHAR(255), NOT NULL - Tautan lokasi penyimpanan berkas
+foto pada Cloud Object Storage</li>
+<li>status_proses: VARCHAR(20), NOT NULL, DEFAULT ‘pending’, CHECK
+(status_proses IN (‘pending’, ‘processing’, ‘completed’, ‘failed’)) -
+Status pemrosesan klasifikasi oleh sistem</li>
+<li>created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+pengunggahan foto</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_uploads_pengguna - filter upload per pengguna</li>
+<li>idx_uploads_status - filter berdasarkan status proses</li>
+<li>idx_uploads_created (DESC) - recent uploads query</li>
+</ul>
+<p>Foreign Key Constraint: ON DELETE CASCADE - menghapus user akan
+menghapus semua unggahannya</p>
+<h3 id="tabel-3-classification_results">Tabel 3:
+classification_results</h3>
+<p>Fungsi: Menyimpan luaran hasil inferensi model CNN terhadap foto
+sampah yang diunggah.</p>
+<p>Realisasi Requirement: DATA-002, NFR-002</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_klasifikasi: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik hasil pengujian klasifikasi</li>
+<li>id_unggahan: UUID, UNIQUE, FOREIGN KEY REFERENCES
+uploads(id_unggahan), NOT NULL - Relasi 1:1 ke berkas foto yang
+diuji</li>
+<li>kategori_sampah: VARCHAR(20), NOT NULL, CHECK (kategori_sampah IN
+(‘organik’, ‘anorganik’, ‘residu’, ‘tidak_dikenal’)) - Label kategori
+sampah hasil prediksi model</li>
+<li>confidence_score: NUMERIC(4,3), NOT NULL, CHECK (confidence_score
+&gt;= 0.0 AND confidence_score &lt;= 1.0) - Tingkat keyakinan prediksi
+model AI (contoh: 0.925)</li>
+<li>is_valid: BOOLEAN, NOT NULL, DEFAULT TRUE - Status keabsahan
+pemilahan (valid jika keyakinan &gt;= ambang batas)</li>
+<li>waktu_proses: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP -
+Waktu inferensi selesai diproses</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_classification_unggahan (UNIQUE) - O(1) lookup per upload</li>
+<li>idx_classification_kategori - statistik per kategori</li>
+<li>idx_classification_valid - filter valid/invalid classifications</li>
+</ul>
+<p>Foreign Key Constraint: ON DELETE CASCADE - menghapus upload akan
+menghapus hasil klasifikasinya. Relasi 1:1 (UNIQUE) - satu foto hanya
+punya satu hasil klasifikasi</p>
+<h3 id="tabel-4-rewards">Tabel 4: rewards</h3>
+<p>Fungsi: Menyimpan katalog insentif/hadiah yang dapat ditukarkan oleh
+civitas akademika menggunakan saldo poin.</p>
+<p>Realisasi Requirement: DATA-005</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_reward: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci unik
+item reward</li>
+<li>nama_reward: VARCHAR(100), NOT NULL - Nama produk atau voucher
+insentif</li>
+<li>deskripsi: TEXT, NULL - Informasi detail syarat dan ketentuan
+penukaran</li>
+<li>poin_dibutuhkan: INTEGER, NOT NULL, CHECK (poin_dibutuhkan &gt; 0) -
+Biaya poin yang wajib dibayar pengguna</li>
+<li>stok: INTEGER, NOT NULL, DEFAULT 0, CHECK (stok &gt;= 0) - Sisa
+kuota ketersediaan voucher</li>
+<li>masa_berlaku: DATE, NOT NULL - Batas waktu akhir penukaran
+reward</li>
+<li>is_active: BOOLEAN, NOT NULL, DEFAULT TRUE - Status ketersediaan
+item pada katalog</li>
+<li>created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+item reward ditambahkan oleh admin</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_rewards_active - filter reward aktif di katalog</li>
+<li>idx_rewards_poin - filter reward berdasarkan harga poin</li>
+</ul>
+<h3 id="tabel-5-reward_redemptions">Tabel 5: reward_redemptions</h3>
+<p>Fungsi: Menyimpan catatan penukaran poin menjadi kode voucher reward
+serta status klaim pengguna.</p>
+<p>Realisasi Requirement: FR-008</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_penukaran: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik transaksi penukaran</li>
+<li>id_pengguna: UUID, FOREIGN KEY REFERENCES users(id_pengguna), NOT
+NULL - ID pengguna yang melakukan penukaran</li>
+<li>id_reward: UUID, FOREIGN KEY REFERENCES rewards(id_reward), NOT NULL
+- ID reward yang ditukarkan</li>
+<li>kode_voucher: VARCHAR(50), UNIQUE, NOT NULL - Kode unik acak untuk
+verifikasi klaim ke pihak mitra/kantin</li>
+<li>status: VARCHAR(20), NOT NULL, DEFAULT ‘aktif’, CHECK (status IN
+(‘aktif’, ‘terpakai’, ‘kedaluwarsa’)) - Status masa berlaku voucher</li>
+<li>tanggal_penukaran: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP
+- Waktu penukaran poin berhasil</li>
+<li>tanggal_digunakan: TIMESTAMPTZ, NULL - Waktu kode voucher divalidasi
+dan digunakan</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_redemptions_pengguna - riwayat penukaran per pengguna</li>
+<li>idx_redemptions_reward - statistik reward mana yang paling
+ditukar</li>
+<li>idx_redemptions_status - filter voucher
+aktif/terpakai/kedaluwarsa</li>
+<li>idx_redemptions_voucher (UNIQUE) - O(1) lookup via kode voucher</li>
+</ul>
+<p>Foreign Key Constraints:</p>
+<ul>
+<li>id_pengguna: ON DELETE CASCADE - hapus user hapus semua
+penukaran</li>
+<li>id_reward: ON DELETE RESTRICT - reward tidak bisa dihapus selama ada
+penukaran aktif</li>
+</ul>
+<h3 id="tabel-6-point_transactions">Tabel 6: point_transactions</h3>
+<p>Fungsi: Buku besar (ledger) pencatatan mutasi penambahan maupun
+pemotongan poin secara terperinci.</p>
+<p>Realisasi Requirement: DATA-004</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_transaksi: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik pencatatan transaksi poin</li>
+<li>id_pengguna: UUID, FOREIGN KEY REFERENCES users(id_pengguna), NOT
+NULL - ID pemilik akun yang mengalami mutasi poin</li>
+<li>id_referensi: UUID, NULL - Merujuk ke id_unggahan (jika bertambah)
+atau id_penukaran (jika berkurang)</li>
+<li>jumlah_poin: INTEGER, NOT NULL, CHECK (jumlah_poin &gt; 0) - Nilai
+nominal poin yang dimutasi</li>
+<li>jenis_transaksi: VARCHAR(20), NOT NULL, CHECK (jenis_transaksi IN
+(‘penambahan’, ‘pengurangan’)) - Tipe arus poin</li>
+<li>deskripsi: VARCHAR(255), NOT NULL - Keterangan rincian aktivitas
+perolehan/penggunaan poin</li>
+<li>created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+transaksi dicatatkan ke sistem</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_transactions_pengguna - riwayat transaksi per pengguna</li>
+<li>idx_transactions_jenis - statistik penambahan vs pengurangan</li>
+<li>idx_transactions_created (DESC) - recent transactions</li>
+<li>idx_transactions_referensi - audit trail ke upload/redemption</li>
+</ul>
+<p>Foreign Key Constraint: ON DELETE CASCADE - hapus user hapus riwayat
+transaksi</p>
+<h3 id="tabel-7-education_materials">Tabel 7: education_materials</h3>
+<p>Fungsi: Menyimpan konten literasi panduan tata cara pemilahan sampah
+bagi civitas akademika.</p>
+<p>Realisasi Requirement: FR-009</p>
+<p>Kolom-kolom:</p>
+<ul>
+<li>id_edukasi: UUID, PRIMARY KEY, DEFAULT gen_random_uuid() - Kunci
+unik konten edukasi</li>
+<li>id_admin: UUID, FOREIGN KEY REFERENCES users(id_pengguna), NULL - ID
+admin pengunggah materi</li>
+<li>judul: VARCHAR(150), NOT NULL - Judul panduan atau artikel
+edukasi</li>
+<li>kategori_sampah: VARCHAR(20), NOT NULL, CHECK (kategori_sampah IN
+(‘organik’, ‘anorganik’, ‘residu’, ‘umum’)) - Kategori topik pemilahan
+yang dibahas</li>
+<li>konten: TEXT, NOT NULL - Isi uraian panduan materi secara
+lengkap</li>
+<li>url_media: VARCHAR(255), NULL - Tautan gambar/infografis
+pendukung</li>
+<li>created_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+publikasi artikel</li>
+<li>updated_at: TIMESTAMPTZ, NOT NULL, DEFAULT CURRENT_TIMESTAMP - Waktu
+artikel terakhir kali diperbarui</li>
+</ul>
+<p>Indexes:</p>
+<ul>
+<li>idx_education_kategori - filter materi per kategori sampah</li>
+<li>idx_education_admin - materi yang dibuat per admin</li>
+</ul>
+<p>Foreign Key Constraint: id_admin: ON DELETE SET NULL - hapus admin
+tidak menghapus materinya</p>
+<h2 id="views-materialized-queries">1.5 Views (Materialized
+Queries)</h2>
+<h3 id="view-1-v_leaderboard_user">View 1: v_leaderboard_user</h3>
+<p>Fungsi: Peringkat pengguna berdasarkan total poin (descending).</p>
+<p>Query view ini melakukan SELECT dari tabel users dengan filter peran
+civitas, mengurutkan berdasarkan total_poin descending, dan menambahkan
+kolom rank menggunakan window function ROW_NUMBER().</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Menampilkan leaderboard pengguna di frontend</li>
+<li>Ranking otomatis berdasarkan total_poin</li>
+<li>Filter hanya civitas (bukan admin/pimpinan)</li>
+</ul>
+<h3 id="view-2-v_leaderboard_building">View 2:
+v_leaderboard_building</h3>
+<p>Fungsi: Peringkat gedung/unit berdasarkan total poin agregat.</p>
+<p>Query view ini melakukan GROUP BY unit_gedung, menghitung
+SUM(total_poin) per gedung, COUNT(*) untuk total pengguna per gedung,
+dan mengurutkan berdasarkan total poin descending.</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Kompetisi antar unit/gedung</li>
+<li>Gamification element untuk meningkatkan partisipasi</li>
+</ul>
+<h3 id="view-3-v_statistik_klasifikasi">View 3:
+v_statistik_klasifikasi</h3>
+<p>Fungsi: Statistik hasil klasifikasi per kategori sampah.</p>
+<p>Query view ini melakukan GROUP BY kategori_sampah, menghitung
+COUNT(*) total klasifikasi per kategori, AVG(confidence_score) rata-rata
+confidence, serta valid_count dan invalid_count menggunakan conditional
+aggregation.</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Monitoring akurasi model CNN per kategori</li>
+<li>Identifikasi kategori yang butuh training lebih</li>
+<li>Dashboard admin analytics</li>
+</ul>
+<h3 id="view-4-v_aktivitas_pengguna">View 4: v_aktivitas_pengguna</h3>
+<p>Fungsi: Ringkasan aktivitas pengguna (uploads, klasifikasi,
+poin).</p>
+<p>Query view ini melakukan LEFT JOIN dari users ke uploads dan
+classification_results, menghitung total upload, total klasifikasi,
+valid klasifikasi, dan waktu upload terakhir per pengguna.</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Profil pengguna dengan statistik aktivitas</li>
+<li>Deteksi pengguna inactive</li>
+<li>Dashboard personal stats</li>
+</ul>
+<h2 id="triggers-automated-data-integrity">1.6 Triggers (Automated Data
+Integrity)</h2>
+<h3 id="trigger-1-trg_users_updated_at">Trigger 1:
+trg_users_updated_at</h3>
+<p>Fungsi: Auto-update updated_at saat record users diubah.</p>
+<p>Trigger ini menggunakan function update_updated_at_column() yang
+di-execute BEFORE UPDATE pada tabel users. Function ini mengubah
+NEW.updated_at menjadi CURRENT_TIMESTAMP sebelum record disimpan.</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Tracking perubahan profil pengguna</li>
+<li>Audit trail implicit</li>
+</ul>
+<h3 id="trigger-2-trg_education_updated_at">Trigger 2:
+trg_education_updated_at</h3>
+<p>Fungsi: Auto-update updated_at saat record education_materials
+diubah.</p>
+<p>Trigger ini menggunakan function yang sama
+(update_updated_at_column()) yang di-execute BEFORE UPDATE pada tabel
+education_materials.</p>
+<p>Kegunaan:</p>
+<ul>
+<li>Tracking versi materi edukasi</li>
+<li>Kontrol konten yang sudah diedit</li>
+</ul>
+<h2 id="design-decisions-dan-justification">1.7 Design Decisions dan
+Justification</h2>
+<h3 id="uuid-vs-serial-integer-ids">1.7.1 UUID vs Serial Integer
+IDs</h3>
+<p>Keputusan: Menggunakan UUID (Universally Unique Identifier) untuk
+semua Primary Key.</p>
+<p>Alasan:</p>
+<ul>
+<li>Distributed System Ready: UUID dapat di-generate di client tanpa
+perlu round-trip ke DB</li>
+<li>Security: Menyembunyikan jumlah total user/record (tidak
+sequential)</li>
+<li>Merge-friendly: Jika ada multi-database sync, UUID tidak ada
+collision</li>
+<li>PostgreSQL Native Support: uuid-ossp extension sudah built-in</li>
+</ul>
+<p>Trade-off:</p>
+<ul>
+<li>Storage overhead: 16 bytes vs 4/8 bytes untuk integer</li>
+<li>Slower index scan dibanding integer, tapi acceptable untuk aplikasi
+skala universitas</li>
+</ul>
+<h3 id="timestamptz-vs-timestamp">1.7.2 TIMESTAMPTZ vs TIMESTAMP</h3>
+<p>Keputusan: Menggunakan TIMESTAMPTZ (timezone-aware) untuk semua
+timestamp.</p>
+<p>Alasan:</p>
+<ul>
+<li>Timezone Handling: Otomatis convert ke UTC di storage, client bisa
+convert ke local timezone</li>
+<li>Audit Trail Akurat: Waktu transaksi tidak ambiguous</li>
+<li>Multi-Region Ready: Jika ada disaster recovery di region lain,
+timestamp tetap konsisten</li>
+</ul>
+<h3 id="numeric43-untuk-confidence_score">1.7.3 NUMERIC(4,3) untuk
+confidence_score</h3>
+<p>Keputusan: Tipe NUMERIC dengan presisi 4 digit, 3 digit desimal
+(range: 0.000 - 1.000).</p>
+<p>Alasan:</p>
+<ul>
+<li>Exact Precision: AI confidence selalu 0.0-1.0, NUMERIC tidak ada
+rounding error</li>
+<li>Not Float/Double: Float punya precision loss, tidak cocok untuk
+financial/scoring logic</li>
+<li>Range Validation: CHECK constraint di database, bukan hanya di
+application layer</li>
+</ul>
+<h3 id="enum-like-varchar-dengan-check-constraints">1.7.4 Enum-like
+VARCHAR dengan CHECK Constraints</h3>
+<p>Keputusan: Menggunakan VARCHAR dengan CHECK constraint, bukan
+PostgreSQL native ENUM type.</p>
+<p>Alasan:</p>
+<ul>
+<li>Schema Flexibility: Enum di PostgreSQL hard to modify (ALTER TYPE
+requires recreating table)</li>
+<li>ORM Compatibility: Beberapa ORM (Django) lebih mudah handle
+VARCHAR</li>
+<li>Explicit Documentation: Check constraint explicit di schema</li>
+<li>Zero-downtime Migration: Kalau perlu tambah enum value, lebih mudah
+dengan VARCHAR</li>
+</ul>
+<h3 id="cascade-delete-vs-restrict">1.7.5 Cascade Delete vs
+Restrict</h3>
+<p>Keputusan: Campuran - CASCADE untuk user, RESTRICT untuk rewards.</p>
+<p>Alasan CASCADE:</p>
+<ul>
+<li>Saat user dihapus, hapus semua unggahan dan klasifikasi (data orphan
+tidak berguna)</li>
+<li>Saat user dihapus, hapus semua point transactions (valid untuk audit
+trail individual)</li>
+</ul>
+<p>Alasan RESTRICT:</p>
+<ul>
+<li>Rewards tidak boleh dihapus jika masih ada penukaran aktif (data
+integrity)</li>
+<li>Mencegah accidental deletion</li>
+<li>Admin harus handle penukaran terlebih dahulu</li>
+</ul>
+<h3 id="nullable-id_admin-di-education_materials">1.7.6 Nullable
+id_admin di education_materials</h3>
+<p>Keputusan: id_admin nullable, ON DELETE SET NULL.</p>
+<p>Alasan:</p>
+<ul>
+<li>Materi edukasi tetap valuable meski admin dihapus</li>
+<li>Materi umum tidak selalu punya author specific (bisa
+system-generated)</li>
+<li>Soft delete di admin side: simpan materi tapi mark dengan
+id_admin=NULL</li>
+</ul>
+<h3 id="tidak-ada-soft-delete">1.7.7 Tidak Ada Soft Delete</h3>
+<p>Keputusan: Hard delete dengan CASCADE, bukan soft delete (is_active
+column).</p>
+<p>Alasan:</p>
+<ul>
+<li>Konsisten dengan dokumen RPL (tidak ada is_deleted column)</li>
+<li>Data retention policy di application layer (audit log terpisah)</li>
+<li>Simpler query logic (no WHERE is_deleted=FALSE di setiap query)</li>
+<li>Kalau butuh audit trail, gunakan triggers + separate audit table
+(future enhancement)</li>
+</ul>
+<h2 id="sample-data">1.8 Sample Data</h2>
+<p>Schema include sample data untuk testing dan demo.</p>
+<p>Rewards (4 items):</p>
+<ul>
+<li>E-Certificate Participant (500 poin)</li>
+<li>Sticker Pack Pemilahan (250 poin)</li>
+<li>Badge Top 10 Leaderboard (1000 poin)</li>
+<li>Bonus 100 Poin (300 poin)</li>
+</ul>
+<p>Education Materials (4 articles):</p>
+<ul>
+<li>Pengenalan Sampah Organik</li>
+<li>Cara Memilah Sampah Organik</li>
+<li>Pengenalan Sampah Anorganik</li>
+<li>Pengenalan Sampah Residu</li>
+</ul>
+<h2 id="execution-dan-verification">1.9 Execution dan Verification</h2>
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Install PostgreSQL 14 atau lebih baru. Windows: download dari
+https://www.postgresql.org/download/windows/</p>
+<p>Verify installation dengan command: psql –version</p>
+<h3 id="execution-steps">Execution Steps</h3>
+<ol type="1">
+<li>Login ke PostgreSQL: psql -U postgres</li>
+<li>Execute schema script</li>
+<li>Verify database created: gunakan command </li>
+<li>Connect to pilah_in database: gunakan command ilah_in</li>
+<li>List tables: gunakan command </li>
+<li>Test views: SELECT * FROM v_leaderboard_user; SELECT * FROM
+v_statistik_klasifikasi;</li>
+</ol>
+<h3 id="verification-checklist">Verification Checklist</h3>
+<ul>
+<li>Database created with UTF-8 encoding</li>
+<li>All 7 tables exist with correct schema</li>
+<li>All indexes created</li>
+<li>All views accessible</li>
+<li>All triggers registered</li>
+<li>Sample data loaded</li>
+<li>Foreign key constraints working</li>
+<li>Check constraints enforced</li>
+</ul>
+<h2 id="key-implementation-notes">1.10 Key Implementation Notes</h2>
+<ol type="1">
+<li>Data Integrity: Constraints di database level, bukan hanya
+application layer</li>
+<li>Performance: Indexes di kolom yang sering di-query (foreign keys,
+status, ranking)</li>
+<li>Audit Trail: created_at dan updated_at di semua tabel untuk
+tracking</li>
+<li>Scalability: UUID dan TIMESTAMPTZ siap untuk distributed system</li>
+<li>Flexibility: Views untuk common queries, bukan hard-coded
+reports</li>
+<li>Consistency: Schema 100% match dengan Data Dictionary dokumen teknis
+RPL</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<p>Task 1 berhasil mengimplementasikan PostgreSQL database schema
+Pilah.in dengan:</p>
+<ul>
+<li>7 tabel utama sesuai 3NF design</li>
+<li>Komprehensif constraints untuk data integrity</li>
+<li>4 views untuk reporting dan analytics</li>
+<li>2 triggers untuk automation</li>
+<li>Strategic indexes untuk performance</li>
+</ul>
+<p>Schema siap untuk diintegrasikan dengan Django backend (Task 2 FASE
+1).</p>
+<p>File Location: C:_Code-RPL-26_0_Infrastructure<br />
+</p>
+<p>Last Updated: 2026-10-20</p>
+<p>Status: 100% Compliant with RPL Technical Document</p>
+</body>
+</html>
